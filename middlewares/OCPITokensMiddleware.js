@@ -41,6 +41,9 @@ module.exports = class OCPITokenMiddleware {
 					message: "Missing Token",
 				});
 
+			req.party_id = decodedToken.party_id;
+			req.country_code = decodedToken.country_code;
+
 			next();
 		} catch (err) {
 			if (err !== null) {
