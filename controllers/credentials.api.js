@@ -79,7 +79,7 @@ module.exports = (app) => {
 				const versions = await service.GetVersionEndpoints(version);
 
 				logger.info({
-					VERSIONS_API_RESPONSE: {
+					VERSION_ENDPOINTS_API_RESPONSE: {
 						status: 200,
 						data: versions,
 						status_code: 1000,
@@ -91,7 +91,9 @@ module.exports = (app) => {
 					.json({ status_code: 1000, data: versions, message: "SUCCESS" });
 			} catch (err) {
 				if (err !== null) {
-					logger.error({ VERSIONS_API_ERROR: { message: err.message } });
+					logger.error({
+						VERSION_ENDPOINTS_API_ERROR: { message: err.message },
+					});
 
 					return res.status(err.status ? err.status : 500).json({
 						name: err.name ? err.name : "Generic Server Error",
@@ -103,7 +105,7 @@ module.exports = (app) => {
 				}
 
 				logger.error({
-					VERSIONS_API_ERROR: {
+					VERSION_ENDPOINTS_API_ERROR: {
 						name: "Generic Server Error",
 						status_code: 3000,
 						status: 500,
