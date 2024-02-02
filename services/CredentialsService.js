@@ -25,9 +25,9 @@ module.exports = class CredentialsService {
 		return result[0];
 	}
 
-	async GetToken(partyID, countryCode) {
-		const result = await this.#repository.GetToken(partyID, countryCode);
+	async SaveTokenB(data) {
+		const res = await this.#repository.SaveTokenB(data);
 
-		return result;
+		res.release();
 	}
 };

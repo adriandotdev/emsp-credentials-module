@@ -28,4 +28,30 @@ module.exports = class CredentialsRepository {
 			});
 		});
 	}
+
+	SaveTokenB(data) {
+		const query = `UPDATE cpos SET token_b = ? WHERE party_id = ? AND country_code = ?`;
+
+		return new Promise((resolve, reject) => {
+			mysql.getConnection((err, connection) => {
+				if (err) {
+					connection.release();
+					reject(err);
+				}
+
+				connection.query(
+					query,
+					[data.token, data.party_id, data.country_code],
+					(err, result) => {
+						if (err) {
+							connection.release();
+							reject(err);
+						}
+
+						resolve(connection);
+					}
+				);
+			});
+		});
+	}
 };
