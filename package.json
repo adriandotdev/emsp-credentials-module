@@ -13,6 +13,7 @@
 	"license": "ISC",
 	"dependencies": {
 		"@types/jest": "^29.5.10",
+		"axios": "^1.6.7",
 		"body-parser": "^1.20.2",
 		"config.js": "^0.1.0",
 		"cookie-parser": "^1.4.6",
