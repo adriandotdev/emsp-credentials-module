@@ -1,27 +1,37 @@
 const CredentialsService = require("../services/CredentialsService");
 
-const service = new CredentialsService();
-
-// Utils
+// Configs
 const logger = require("../config/winston");
 
 module.exports = (app) => {
-	app.get("/ocpi/emsp/versions", async (req, res) => {
-		try {
-			logger.info({
-				VERSIONS_API_RESPONSE: { status: 200, message: "APPROVED" },
-			});
+	const service = new CredentialsService();
 
+	app.get("/ocpi/emsp/versions", async (req, res) => {
+		logger.info({
+			VERSIONS_API_REQUEST: "SUCCESS",
+		});
+
+		try {
 			const versions = await service.GetVersions();
+
+			logger.info({
+				VERSIONS_API_RESPONSE: {
+					status: 200,
+					data: versions,
+					status_code: 1000,
+				},
+			});
 
 			return res
 				.status(200)
-				.json({ status: 1000, data: versions, message: "SUCCESS" });
+				.json({ status_code: 1000, data: versions, message: "SUCCESS" });
 		} catch (err) {
 			if (err !== null) {
 				logger.error({ VERSIONS_API_ERROR: { message: err.message } });
 
 				return res.status(err.status ? err.status : 500).json({
+					name: err.name ? err.name : "Generic Server Error",
+					status_code: err.status_code ? err.status_code : 3000,
 					status: err.status ? err.status : 500,
 					data: err.data,
 					message: err.message,
@@ -30,31 +40,51 @@ module.exports = (app) => {
 
 			logger.error({
 				VERSIONS_API_ERROR: {
-					message: "Internal Server Error",
+					name: "Generic Server Error",
+					status_code: 3000,
+					status: 500,
+					data: [],
+					message: "",
 				},
 			});
-			return res
-				.status(500)
-				.json({ status: 500, data: [], message: "Internal Server Error" });
+			return res.status(500).json({
+				name: "Generic Server Error",
+				status_code: 3000,
+				status: 500,
+				data: [],
+				message: "",
+			});
 		}
 	});
 
 	app.get("/ocpi/emsp/:version", async (req, res) => {
-		try {
-			logger.info({
-				VERSION_ENDPOINTS_API_RESPONSE: { status: 200, message: "APPROVED" },
-			});
+		const { version } = req.params;
 
-			const versions = await service.GetVersions();
+		logger.info({
+			VERSION_ENDPOINTS_API_REQUEST: { version },
+		});
+
+		try {
+			const versions = await service.GetVersionEndpoints(version);
+
+			logger.info({
+				VERSIONS_API_RESPONSE: {
+					status: 200,
+					data: versions,
+					status_code: 1000,
+				},
+			});
 
 			return res
 				.status(200)
-				.json({ status: 1000, data: versions, message: "SUCCESS" });
+				.json({ status_code: 1000, data: versions, message: "SUCCESS" });
 		} catch (err) {
 			if (err !== null) {
-				logger.error({ VERSION_ENDPOINTS_API_ERROR: { message: err.message } });
+				logger.error({ VERSIONS_API_ERROR: { message: err.message } });
 
 				return res.status(err.status ? err.status : 500).json({
+					name: err.name ? err.name : "Generic Server Error",
+					status_code: err.status_code ? err.status_code : 3000,
 					status: err.status ? err.status : 500,
 					data: err.data,
 					message: err.message,
@@ -62,13 +92,22 @@ module.exports = (app) => {
 			}
 
 			logger.error({
-				VERSION_ENDPOINTS_API_ERROR: {
-					message: "Internal Server Error",
+				VERSIONS_API_ERROR: {
+					name: "Generic Server Error",
+					status_code: 3000,
+					status: 500,
+					data: [],
+					message: "",
 				},
 			});
-			return res
-				.status(500)
-				.json({ status: 500, data: [], message: "Internal Server Error" });
+
+			return res.status(500).json({
+				name: "Generic Server Error",
+				status_code: 3000,
+				status: 500,
+				data: [],
+				message: "",
+			});
 		}
 	});
 };

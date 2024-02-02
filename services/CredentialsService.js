@@ -1,5 +1,8 @@
 const CredentialsRepository = require("../repository/CredentialsRepository");
 
+// Utils
+const { GenericClientError } = require("../utils/OCPIError");
+
 module.exports = class CredentialsService {
 	#repository;
 
@@ -14,8 +17,11 @@ module.exports = class CredentialsService {
 	}
 
 	async GetVersionEndpoints(version) {
-		const endpoints = await this.#repository.GetVersionEndpoints(version);
+		const result = await this.#repository.GetVersionEndpoints(version);
 
-		return endpoints;
+		if (result[0][0].STATUS === "VERSION_NOT_SUPPORTED")
+			throw new GenericClientError(result[0][0].STATUS, []);
+
+		return result[0];
 	}
 };

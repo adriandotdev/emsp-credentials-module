@@ -16,7 +16,7 @@ module.exports = class CredentialsRepository {
 	}
 
 	GetVersionEndpoints(version) {
-		const query = `SELECT version, module_id AS identifier, url FROM emsp_version_details WHERE version = ?`;
+		const query = `CALL EMSP_GET_ENDPOINTS(?)`;
 
 		return new Promise((resolve, reject) => {
 			mysql.query(query, [version], (err, result) => {
