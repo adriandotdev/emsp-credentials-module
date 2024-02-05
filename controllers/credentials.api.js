@@ -133,8 +133,7 @@ module.exports = (app) => {
 	/**
 	 * @dependencies
 	 * - SaveTokenB
-	 * - SaveCPOVersions
-	 * - SaveCPOVersionEndpoints
+	 * - SaveVersionAndEndpoints
 	 * - Crypto.Encrypt
 	 * - SaveTokenC
 	 */
@@ -168,29 +167,13 @@ module.exports = (app) => {
 					version,
 				});
 
-				// 2.) Get Versions
-				const versions = await axios.get(
-					"http://localhost:5000/ocpi/cpo/versions"
-				);
-
-				// 3.) Get Endpoints
-				const endpoints = await axios.get(
-					`http://localhost:5000/ocpi/cpo/${version}`
-				);
-
-				await service.SaveCPOVersions({
+				await service.SaveCPOVersionsAndEndpoints({
 					party_id: req.party_id,
 					country_code: req.country_code,
-					versions: versions.data.data,
+					version,
 				});
 
-				await service.SaveCPOVersionEndpoints({
-					party_id: req.party_id,
-					country_code: req.country_code,
-					endpoints: endpoints.data.data,
-				});
-
-				// 5.) Generate, and Save Token C. Remove Token A.
+				// Generate, and Save Token C. Remove Token A.
 				const tokenC = Crypto.Encrypt(
 					JSON.stringify({
 						party_id: req.party_id,
@@ -257,6 +240,7 @@ module.exports = (app) => {
 		}
 	);
 
+	/** These 2 APIs are for testing purposes only. */
 	app.get("/ocpi/cpo/versions", (req, res) => {
 		return res.status(200).json({
 			status_code: 1000,

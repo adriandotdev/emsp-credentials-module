@@ -2,6 +2,7 @@ const CredentialsRepository = require("../repository/CredentialsRepository");
 
 // Utils
 const { GenericClientError } = require("../utils/OCPIError");
+const axios = require("axios");
 
 module.exports = class CredentialsService {
 	#repository;
@@ -40,12 +41,32 @@ module.exports = class CredentialsService {
 		await this.#repository.SaveTokenC(data);
 	}
 
-	async SaveCPOVersions(data) {
-		await this.#repository.SaveCPOVersions(data);
-	}
+	async SaveCPOVersionsAndEndpoints(data) {
+		// 2.) Get Versions
+		const versions = await axios.get("http://localhost:5000/ocpi/cpo/versions");
 
-	async SaveCPOVersionEndpoints(data) {
-		await this.#repository.SaveCPOVersionEndpoints(data);
+		// 3.) Get Endpoints
+		const endpoints = await axios.get(
+			`http://localhost:5000/ocpi/cpo/${data.version}`
+		);
+
+		if (!versions || !versions.data || versions.data.data.length === 0)
+			throw new GenericClientError("SUPPORTED_VERSIONS_ARE_REQUIRED", []);
+
+		if (!endpoints || !endpoints.data || endpoints.data.data.length === 0)
+			throw new GenericClientError("VERSION_ENDPOINTS_ARE_REQUIRED", []);
+
+		await this.#repository.SaveCPOVersions({
+			party_id: data.party_id,
+			country_code: data.country_code,
+			versions: versions.data.data,
+		});
+
+		await this.#repository.SaveCPOVersionEndpoints({
+			party_id: data.party_id,
+			country_code: data.country_code,
+			endpoints: endpoints.data.data,
+		});
 	}
 
 	async DeleteCPOVersions(data) {
