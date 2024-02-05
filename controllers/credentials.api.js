@@ -145,22 +145,6 @@ module.exports = (app) => {
 			});
 
 			try {
-				logger.info({
-					CREDENTIALS_API_RESPONSE: {
-						status: 200,
-						data: [],
-						status_code: 1000,
-					},
-				});
-
-				/**
-				 * 1.) Store Token B
-				 * 2.) Get Versions
-				 * 3.) Get Endpoints
-				 * 4.) Save Versions and Endpoints
-				 * 5.) Generate Token C
-				 * 6.) Send Token C
-				 */
 				// 1.) Store Token B
 				await service.SaveTokenB({
 					token,
@@ -178,26 +162,52 @@ module.exports = (app) => {
 					`http://localhost:5000/ocpi/cpo/${version}`
 				);
 
-				// 4.) Save Endpoints
-				// @TODO
+				// 4.) Save CPO Versions, and CPO Versions Endpoints
+				await service.SaveCPOVersions({
+					party_id: req.party_id,
+					country_code: req.country_code,
+					versions: versions.data.data,
+				});
 
-				// 5.) Generate Token C
-				/**
-				 * @TODO
-				 * Encrypt, and Decrypt method must have a dynamic IV, and SECRET KEY.
-				 */
+				await service.SaveCPOVersionEndpoints({
+					party_id: req.party_id,
+					country_code: req.country_code,
+					endpoints: endpoints.data.data,
+				});
 
+				// 5.) Generate, and Save Token C. Remove Token A.
 				const tokenC = Crypto.Encrypt(
 					JSON.stringify({
 						party_id: req.party_id,
 						country_code: req.country_code,
-					})
+					}),
+					process.env.CREDENTIAL_TOKEN_C_SECRET_KEY,
+					process.env.CREDENTIAL_TOKEN_A_IV
 				);
+
+				await service.SaveTokenC({
+					party_id: req.party_id,
+					country_code: req.country_code,
+					token_c: tokenC,
+				});
+
+				logger.info({
+					CREDENTIALS_API_RESPONSE: {
+						status: 200,
+						data: {
+							party_id: req.party_id,
+							country_code: req.country_code,
+							token_c: tokenC,
+						},
+						status_code: 1000,
+					},
+				});
 
 				return res.status(200).json({
 					status_code: 1000,
 					data: { token: tokenC },
 					message: "SUCCESS",
+					timestamp: Date.now(),
 				});
 			} catch (err) {
 				if (err !== null) {
@@ -238,7 +248,7 @@ module.exports = (app) => {
 			data: [
 				{
 					version: "2.2.1",
-					url: "localhost:5000/ocpi/emsp/2.2.1",
+					url: "localhost:5000/ocpi/cpo/2.2.1",
 				},
 			],
 			message: "SUCCESS",
@@ -252,7 +262,7 @@ module.exports = (app) => {
 				{
 					version: "2.2.1",
 					identifier: "locations",
-					url: "localhost:5001/ocpi/emsp/locations",
+					url: "localhost:5001/ocpi/cpo/locations",
 				},
 			],
 			message: "SUCCESS",

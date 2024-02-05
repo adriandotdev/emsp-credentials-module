@@ -1,8 +1,11 @@
+require("dotenv").config();
 const logger = require("../config/winston");
 const Crypto = require("../utils/Crypto");
 
 // Repository
 const OCPITokensRepository = require("../repository/OCPITokensRepository");
+
+const { GenericClientError } = require("../utils/OCPIError");
 
 module.exports = class OCPITokenMiddleware {
 	#repository;
@@ -26,21 +29,26 @@ module.exports = class OCPITokenMiddleware {
 					message: "Missing Token",
 				});
 
-			const decodedToken = JSON.parse(Crypto.Decrypt(token));
+			const decodedToken = JSON.parse(
+				Crypto.Decrypt(
+					token,
+					process.env.CREDENTIAL_TOKEN_A_SECRET_KEY,
+					process.env.CREDENTIAL_TOKEN_A_IV
+				)
+			);
 
 			const result = await this.#repository.GetToken(
 				decodedToken.party_id,
 				decodedToken.country_code
 			);
 
-			if (result.length === 0)
-				return res.status(401).json({
-					status_code: 2004,
-					data: [],
-					message: "Invalid Token",
-					message: "Missing Token",
-				});
-
+			if (
+				result.length === 0 ||
+				result[0].token_a === null ||
+				result[0].token_a === undefined
+			) {
+				throw new GenericClientError("Invalid Token", []);
+			}
 			req.party_id = decodedToken.party_id;
 			req.country_code = decodedToken.country_code;
 

@@ -26,8 +26,18 @@ module.exports = class CredentialsService {
 	}
 
 	async SaveTokenB(data) {
-		const res = await this.#repository.SaveTokenB(data);
+		await this.#repository.SaveTokenB(data);
+	}
 
-		res.release();
+	async SaveTokenC(data) {
+		await this.#repository.SaveTokenC(data);
+	}
+
+	async SaveCPOVersions(data) {
+		await this.#repository.SaveCPOVersions(data);
+	}
+
+	async SaveCPOVersionEndpoints(data) {
+		await this.#repository.SaveCPOVersionEndpoints(data);
 	}
 };
