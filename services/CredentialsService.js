@@ -47,4 +47,9 @@ module.exports = class CredentialsService {
 	async SaveCPOVersionEndpoints(data) {
 		await this.#repository.SaveCPOVersionEndpoints(data);
 	}
+
+	async DeleteCPOVersions(data) {
+		console.log(data);
+		await this.#repository.DeleteCPOVersions(data);
+	}
 };

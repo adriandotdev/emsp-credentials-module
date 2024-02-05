@@ -162,6 +162,12 @@ module.exports = (app) => {
 					country_code: req.country_code,
 				});
 
+				await service.DeleteCPOVersions({
+					party_id: req.party_id,
+					country_code: req.country_code,
+					version,
+				});
+
 				// 2.) Get Versions
 				const versions = await axios.get(
 					"http://localhost:5000/ocpi/cpo/versions"
@@ -172,7 +178,6 @@ module.exports = (app) => {
 					`http://localhost:5000/ocpi/cpo/${version}`
 				);
 
-				// 4.) Save CPO Versions, and CPO Versions Endpoints
 				await service.SaveCPOVersions({
 					party_id: req.party_id,
 					country_code: req.country_code,

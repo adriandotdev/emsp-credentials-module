@@ -122,4 +122,23 @@ module.exports = class CredentialsRepository {
 			});
 		});
 	}
+
+	DeleteCPOVersions(data) {
+		let query = `DELETE FROM cpo_versions WHERE party_id = ?
+		AND country_code = ? AND version = ?`;
+
+		return new Promise((resolve, reject) => {
+			mysql.query(
+				query,
+				[data.party_id, data.country_code, data.version],
+				(err, result) => {
+					if (err) {
+						reject(err);
+					}
+
+					resolve(result);
+				}
+			);
+		});
+	}
 };
