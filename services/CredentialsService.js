@@ -10,6 +10,13 @@ module.exports = class CredentialsService {
 		this.#repository = new CredentialsRepository();
 	}
 
+	async GetVersion(version) {
+		const result = await this.#repository.GetVersion(version);
+
+		if (result.length === 0)
+			throw new GenericClientError("VERSION_NOT_SUPPORTED", []);
+	}
+
 	async GetVersions() {
 		const versions = await this.#repository.GetVersions();
 

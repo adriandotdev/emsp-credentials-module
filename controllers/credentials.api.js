@@ -130,6 +130,14 @@ module.exports = (app) => {
 		}
 	);
 
+	/**
+	 * @dependencies
+	 * - SaveTokenB
+	 * - SaveCPOVersions
+	 * - SaveCPOVersionEndpoints
+	 * - Crypto.Encrypt
+	 * - SaveTokenC
+	 */
 	app.post(
 		"/ocpi/emsp/:version/credentials",
 		[ocpiMiddleware.TokenAVerifier],
@@ -145,6 +153,8 @@ module.exports = (app) => {
 			});
 
 			try {
+				await service.GetVersion(version); // throws an error when version is not found.
+
 				// 1.) Store Token B
 				await service.SaveTokenB({
 					token,

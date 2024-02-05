@@ -1,6 +1,19 @@
 const mysql = require("../database/mysql");
 
 module.exports = class CredentialsRepository {
+	GetVersion(version) {
+		const query = `SELECT version FROM emsp_versions WHERE version = ?`;
+
+		return new Promise((resolve, reject) => {
+			mysql.query(query, version, (err, result) => {
+				if (err) {
+					reject(err);
+				}
+				resolve(result);
+			});
+		});
+	}
+
 	GetVersions() {
 		const query = `SELECT version, url FROM emsp_versions`;
 
