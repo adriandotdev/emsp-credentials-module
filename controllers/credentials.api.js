@@ -151,27 +151,40 @@ module.exports = (app) => {
 				},
 			});
 
+			let connection = null;
+
 			try {
-				await service.GetVersion(version); // throws an error when version is not found.
+				connection = await service.GetCredentialsConnection();
+
+				await service.GetVersion(version, connection); // throws an error when version is not found.
 
 				// 1.) Store Token B
-				await service.SaveTokenB({
-					token,
-					party_id: req.party_id,
-					country_code: req.country_code,
-				});
+				await service.SaveTokenB(
+					{
+						token,
+						party_id: req.party_id,
+						country_code: req.country_code,
+					},
+					connection
+				);
 
-				await service.DeleteCPOVersions({
-					party_id: req.party_id,
-					country_code: req.country_code,
-					version,
-				});
+				await service.DeleteCPOVersions(
+					{
+						party_id: req.party_id,
+						country_code: req.country_code,
+						version,
+					},
+					connection
+				);
 
-				await service.SaveCPOVersionsAndEndpoints({
-					party_id: req.party_id,
-					country_code: req.country_code,
-					version,
-				});
+				await service.SaveCPOVersionsAndEndpoints(
+					{
+						party_id: req.party_id,
+						country_code: req.country_code,
+						version,
+					},
+					connection
+				);
 
 				// Generate, and Save Token C. Remove Token A.
 				const tokenC = Crypto.Encrypt(
@@ -183,11 +196,14 @@ module.exports = (app) => {
 					process.env.CREDENTIAL_TOKEN_A_IV
 				);
 
-				await service.SaveTokenC({
-					party_id: req.party_id,
-					country_code: req.country_code,
-					token_c: tokenC,
-				});
+				await service.SaveTokenC(
+					{
+						party_id: req.party_id,
+						country_code: req.country_code,
+						token_c: tokenC,
+					},
+					connection
+				);
 
 				logger.info({
 					CREDENTIALS_API_RESPONSE: {
@@ -201,6 +217,10 @@ module.exports = (app) => {
 					},
 				});
 
+				connection.commit(() => {
+					logger.info("Connection commited!");
+				});
+
 				return res.status(200).json({
 					status_code: 1000,
 					data: { token: tokenC },
@@ -210,6 +230,10 @@ module.exports = (app) => {
 			} catch (err) {
 				if (err !== null) {
 					logger.error({ CREDENTIALS_API_ERROR: { message: err.message } });
+
+					connection?.rollback(() => {
+						logger.info("Connection rollback!");
+					});
 
 					return res.status(err.status ? err.status : 500).json({
 						name: err.name ? err.name : "Generic Server Error",
@@ -229,6 +253,11 @@ module.exports = (app) => {
 						message: "",
 					},
 				});
+
+				connection?.rollback(() => {
+					logger.info("Connection rollback!");
+				});
+
 				return res.status(500).json({
 					name: "Generic Server Error",
 					status_code: 3000,
@@ -236,6 +265,8 @@ module.exports = (app) => {
 					data: [],
 					message: "",
 				});
+			} finally {
+				connection?.release();
 			}
 		}
 	);
@@ -262,6 +293,11 @@ module.exports = (app) => {
 					version: "2.2.1",
 					identifier: "locations",
 					url: "localhost:5001/ocpi/cpo/locations",
+				},
+				{
+					version: "2.2.1",
+					identifier: "cdrs",
+					url: "localhost:5001/ocpi/cpo/cdrs",
 				},
 			],
 			message: "SUCCESS",

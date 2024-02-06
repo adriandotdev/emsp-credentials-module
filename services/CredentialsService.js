@@ -11,8 +11,8 @@ module.exports = class CredentialsService {
 		this.#repository = new CredentialsRepository();
 	}
 
-	async GetVersion(version) {
-		const result = await this.#repository.GetVersion(version);
+	async GetVersion(version, connection) {
+		const result = await this.#repository.GetVersion(version, connection);
 
 		if (result.length === 0)
 			throw new GenericClientError("VERSION_NOT_SUPPORTED", []);
@@ -33,15 +33,15 @@ module.exports = class CredentialsService {
 		return result[0];
 	}
 
-	async SaveTokenB(data) {
-		await this.#repository.SaveTokenB(data);
+	async SaveTokenB(data, connection) {
+		await this.#repository.SaveTokenB(data, connection);
 	}
 
-	async SaveTokenC(data) {
-		await this.#repository.SaveTokenC(data);
+	async SaveTokenC(data, connection) {
+		await this.#repository.SaveTokenC(data, connection);
 	}
 
-	async SaveCPOVersionsAndEndpoints(data) {
+	async SaveCPOVersionsAndEndpoints(data, connection) {
 		// 2.) Get Versions
 		const versions = await axios.get("http://localhost:5000/ocpi/cpo/versions");
 
@@ -56,21 +56,30 @@ module.exports = class CredentialsService {
 		if (!endpoints || !endpoints.data || endpoints.data.data.length === 0)
 			throw new GenericClientError("VERSION_ENDPOINTS_ARE_REQUIRED", []);
 
-		await this.#repository.SaveCPOVersions({
-			party_id: data.party_id,
-			country_code: data.country_code,
-			versions: versions.data.data,
-		});
+		await this.#repository.SaveCPOVersions(
+			{
+				party_id: data.party_id,
+				country_code: data.country_code,
+				versions: versions.data.data,
+			},
+			connection
+		);
 
-		await this.#repository.SaveCPOVersionEndpoints({
-			party_id: data.party_id,
-			country_code: data.country_code,
-			endpoints: endpoints.data.data,
-		});
+		await this.#repository.SaveCPOVersionEndpoints(
+			{
+				party_id: data.party_id,
+				country_code: data.country_code,
+				endpoints: endpoints.data.data,
+			},
+			connection
+		);
 	}
 
-	async DeleteCPOVersions(data) {
-		console.log(data);
-		await this.#repository.DeleteCPOVersions(data);
+	async DeleteCPOVersions(data, connection) {
+		await this.#repository.DeleteCPOVersions(data, connection);
+	}
+
+	async GetCredentialsConnection() {
+		return await this.#repository.GetCredentialsConnection();
 	}
 };

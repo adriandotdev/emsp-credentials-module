@@ -1,19 +1,7 @@
 const mysql = require("../database/mysql");
+const logger = require("../config/winston");
 
 module.exports = class CredentialsRepository {
-	GetVersion(version) {
-		const query = `SELECT version FROM emsp_versions WHERE version = ?`;
-
-		return new Promise((resolve, reject) => {
-			mysql.query(query, version, (err, result) => {
-				if (err) {
-					reject(err);
-				}
-				resolve(result);
-			});
-		});
-	}
-
 	GetVersions() {
 		const query = `SELECT version, url FROM emsp_versions`;
 
@@ -42,11 +30,39 @@ module.exports = class CredentialsRepository {
 		});
 	}
 
-	SaveTokenB(data) {
+	GetVersion(version, connection) {
+		const query = `SELECT version FROM emsp_versions WHERE version = ?`;
+
+		return new Promise((resolve, reject) => {
+			connection.query(query, version, (err, result) => {
+				if (err) {
+					reject(err);
+				}
+				resolve(result);
+			});
+		});
+	}
+
+	GetCredentialsConnection() {
+		return new Promise((resolve, reject) => {
+			mysql.getConnection((err, connection) => {
+				connection.beginTransaction((err) => {
+					if (err) {
+						connection.release();
+						reject(err);
+					}
+
+					resolve(connection);
+				});
+			});
+		});
+	}
+
+	SaveTokenB(data, connection) {
 		const query = `UPDATE cpos SET token_b = ? WHERE party_id = ? AND country_code = ?`;
 
 		return new Promise((resolve, reject) => {
-			mysql.query(
+			connection.query(
 				query,
 				[data.token, data.party_id, data.country_code],
 				(err, result) => {
@@ -59,11 +75,11 @@ module.exports = class CredentialsRepository {
 		});
 	}
 
-	SaveTokenC(data) {
+	SaveTokenC(data, connection) {
 		const query = `call EMSP_SET_TOKEN_C_REMOVE_TOKEN_A(?,?,?)`;
 
 		return new Promise((resolve, reject) => {
-			mysql.query(
+			connection.query(
 				query,
 				[data.party_id, data.country_code, data.token_c],
 				(err, result) => {
@@ -77,7 +93,7 @@ module.exports = class CredentialsRepository {
 		});
 	}
 
-	SaveCPOVersions(data) {
+	SaveCPOVersions(data, connection) {
 		let formatQuery = ``;
 
 		data.versions.forEach((v) => {
@@ -90,7 +106,7 @@ module.exports = class CredentialsRepository {
 		)}`;
 
 		return new Promise((resolve, reject) => {
-			mysql.query(query, (err, result) => {
+			connection.query(query, (err, result) => {
 				if (err) {
 					reject(err);
 				}
@@ -100,7 +116,7 @@ module.exports = class CredentialsRepository {
 		});
 	}
 
-	SaveCPOVersionEndpoints(data) {
+	SaveCPOVersionEndpoints(data, connection) {
 		let formatQuery = ``;
 
 		data.endpoints.forEach((e) => {
@@ -113,7 +129,7 @@ module.exports = class CredentialsRepository {
 		)}`;
 
 		return new Promise((resolve, reject) => {
-			mysql.query(query, (err, result) => {
+			connection.query(query, (err, result) => {
 				if (err) {
 					reject(err);
 				}
@@ -123,12 +139,12 @@ module.exports = class CredentialsRepository {
 		});
 	}
 
-	DeleteCPOVersions(data) {
+	DeleteCPOVersions(data, connection) {
 		let query = `DELETE FROM cpo_versions WHERE party_id = ?
 		AND country_code = ? AND version = ?`;
 
 		return new Promise((resolve, reject) => {
-			mysql.query(
+			connection.query(
 				query,
 				[data.party_id, data.country_code, data.version],
 				(err, result) => {
