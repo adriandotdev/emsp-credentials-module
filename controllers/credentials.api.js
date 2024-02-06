@@ -9,11 +9,24 @@ const logger = require("../config/winston");
 // Middleware
 const OCPITokensMiddleware = require("../middlewares/OCPITokensMiddleware");
 
-const axios = require("axios");
+const { validationResult, body, param } = require("express-validator");
+
+const { HttpUnprocessableEntity } = require("../utils/HttpError");
 
 module.exports = (app) => {
 	const service = new CredentialsService();
 	const ocpiMiddleware = new OCPITokensMiddleware();
+
+	function validate(req, res) {
+		const ERRORS = validationResult(req);
+
+		if (!ERRORS.isEmpty()) {
+			throw new HttpUnprocessableEntity(
+				"Unprocessable Entity",
+				ERRORS.mapped()
+			);
+		}
+	}
 
 	app.get(
 		"/ocpi/emsp/versions",
@@ -72,7 +85,12 @@ module.exports = (app) => {
 
 	app.get(
 		"/ocpi/emsp/:version",
-		[ocpiMiddleware.TokenAVerifier],
+		[
+			ocpiMiddleware.TokenAVerifier,
+			param("version")
+				.notEmpty()
+				.withMessage("Missing required property: version"),
+		],
 		async (req, res) => {
 			const { version } = req.params;
 
@@ -81,6 +99,8 @@ module.exports = (app) => {
 			});
 
 			try {
+				validate(req, res);
+
 				const versions = await service.GetVersionEndpoints(version);
 
 				logger.info({
@@ -139,7 +159,16 @@ module.exports = (app) => {
 	 */
 	app.post(
 		"/ocpi/emsp/:version/credentials",
-		[ocpiMiddleware.TokenAVerifier],
+		[
+			ocpiMiddleware.TokenAVerifier,
+			param("version")
+				.notEmpty()
+				.withMessage("Missing required parameter: version"),
+			body("endpoint")
+				.notEmpty()
+				.withMessage("Missing required property: endpoint"),
+			body("token").notEmpty().withMessage("Missing required property: token"),
+		],
 		async (req, res) => {
 			const { version } = req.params;
 			const { endpoint, token } = req.body;
@@ -154,6 +183,8 @@ module.exports = (app) => {
 			let connection = null;
 
 			try {
+				validate(req, res);
+
 				connection = await service.GetCredentialsConnection();
 
 				await service.GetVersion(version, connection); // throws an error when version is not found.
